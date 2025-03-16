@@ -152,12 +152,12 @@ function displayScoreAndHighscore() {
     ctx.fillStyle = 'white';
 
     // Score auf der rechten Seite anzeigen, aber sicherstellen, dass es nicht aus dem Bild verschwindet
-    const scoreX = Math.max(canvas.width - 150, 10); // Verhindert, dass der Score zu nah an der rechten Kante ist
-    ctx.fillText(scoreText, scoreX, 20);
+    const scoreX = Math.max(canvas.width-50-scoreText.length); // Verhindert, dass der Score zu nah an der rechten Kante ist
+    ctx.fillText(scoreText, scoreX, 30);
 
     // Highscore auf der linken Seite anzeigen, aber sicherstellen, dass es nicht zu nah an der linken Kante ist
-    const highscoreX = Math.min(20, canvas.width - 150); // Verhindert, dass der Highscore zu nah an der linken Kante ist
-    ctx.fillText(highscoreText, highscoreX, 20);
+    const highscoreX = Math.min(70); // Verhindert, dass der Highscore zu nah an der linken Kante ist
+    ctx.fillText(highscoreText, highscoreX, 30);
 }
 
 function saveHighscore(score) {
