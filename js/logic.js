@@ -12,7 +12,7 @@ class Player {
         this.gravity = gravity;
         this.yChange = 0;
         this.xChange = 0;
-        this.jumpPower = -12;
+        this.jumpPower = -0.5;
         this.onGround = false;
         this.state = 'idle'; // Anfangszustand 'idle'
 
@@ -97,9 +97,9 @@ class Player {
             this.state = 'idle';
         }
 
-        // Sprung-Logik mit besserer Physik
+        // Sprung-Logik
         if (keys['Space'] && this.onGround) {
-            this.yChange = this.jumpPower; // Reduzierte Sprungkraft
+            this.yChange = this.jumpPower; // Sprungkraft wird nur einmal gesetzt
             this.onGround = false;
             this.state = 'jump';
             soundManager.playJumpSound();
@@ -107,23 +107,22 @@ class Player {
 
         // Schwerkraft anwenden
         if (!this.onGround) {
-            this.yChange += this.gravity;
+            this.yChange += this.gravity * deltaTime; // Schwerkraft zieht den Spieler nach unten
         }
+
         // Position in Y-Richtung anpassen
         this.y += this.yChange;
 
         // Boden-Kollision
         if (this.y >= floorTop - this.size) {
-            this.y = floorTop - this.size;
-            this.yChange = 0;
-            this.onGround = true;
+            this.y = floorTop - this.size; // Spieler auf dem Boden positionieren
+            this.yChange = 0; // Y-Geschwindigkeit zurücksetzen
+            this.onGround = true; // Spieler ist wieder am Boden
         }
 
-        // Spielerposition aktualisieren
+        // Spielerposition in X-Richtung aktualisieren
         this.x += this.xChange;
     }
-
-
 
 
     getRect() {

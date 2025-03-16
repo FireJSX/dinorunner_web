@@ -16,9 +16,9 @@ let score = 0;
 let highscore = 0;
 let active = false;
 let playerSize = 20;
-let gravity = 0.2;
-let speed = 10;
-let obstacleSpeed = 2;
+let gravity = 0.1;
+let speed = 15;
+let obstacleSpeed = 6;
 let lastSpeedIncrease = -10;
 
 // Erstelle die Spielfunktionen und Objekte
