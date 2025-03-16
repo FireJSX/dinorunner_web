@@ -12,12 +12,29 @@ class SpriteSheet {
         this.frames = [];
         this.spritesheet = new Image();
 
+        // Setze den Onload-Handler
         this.spritesheet.onload = () => {
-            this.frames = this._extractFrames();
+            console.log('Sprite-Sheet geladen!');
+            console.log(`Bildgröße nach dem Laden: ${this.spritesheet.width}x${this.spritesheet.height}`);
+
+            // Falls das Bild korrekt geladen wurde, rufen wir die Extraktionsmethode auf
+            if (this.spritesheet.width > 0 && this.spritesheet.height > 0) {
+                this.frames = this.extractFrames();  // Verwende extractFrames, wenn das Bild geladen wurde
+            } else {
+                console.error('Das Bild konnte nicht korrekt geladen werden (Breite und Höhe 0).');
+            }
         };
 
-        // Lade das Sprite-Sheet-Bild
+        // Füge Fehlerbehandlung hinzu
+        this.spritesheet.onerror = () => {
+            console.error('Fehler beim Laden des Sprite-Sheets!');
+        };
+
+        // Lade das Bild
         this.spritesheet.src = filename;
+
+        // Logge sofort die Größe vor dem Laden (wird immer 0x0 sein, da es noch nicht geladen ist)
+        console.log(`Bildgröße vor dem Laden: ${this.spritesheet.width}x${this.spritesheet.height}`);
     }
 
     /**
@@ -25,39 +42,35 @@ class SpriteSheet {
      *
      * @returns {Array} Eine Liste von <canvas>-Elementen, die die extrahierten Frames enthalten.
      */
-    _extractFrames() {
-        const sheetWidth = this.spritesheet.width;
-        const sheetHeight = this.spritesheet.height;
+    extractFrames() {
         const frames = [];
+        const cols = Math.floor(this.spritesheet.width / this.frameWidth);
+        const rows = Math.floor(this.spritesheet.height / this.frameHeight);
 
-        // Debug: Zeige die Abmessungen des Spritesheets
-        console.log(`SpriteSheet Größe: ${sheetWidth}x${sheetHeight}`);
-        console.log(`Frame Größe: ${this.frameWidth}x${this.frameHeight}`);
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = this.frameWidth;
+                canvas.height = this.frameHeight;
 
-        // Überprüfe, wie viele Frames wir in X und Y Richtung extrahieren können
-        for (let y = 0; y < sheetHeight; y += this.frameHeight) {
-            for (let x = 0; x < sheetWidth; x += this.frameWidth) {
-                if (x + this.frameWidth <= sheetWidth && y + this.frameHeight <= sheetHeight) {
-                    // Erstelle ein neues Canvas-Element für jedes Frame
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
+                // Zeichne den Frame aus dem Sprite-Sheet auf das Canvas
+                context.drawImage(
+                    this.spritesheet,
+                    col * this.frameWidth,
+                    row * this.frameHeight,
+                    this.frameWidth,
+                    this.frameHeight,
+                    0,
+                    0,
+                    this.frameWidth,
+                    this.frameHeight
+                );
 
-                    // Zeichne den Frame auf das Canvas
-                    canvas.width = this.frameWidth;
-                    canvas.height = this.frameHeight;
-                    ctx.drawImage(this.spritesheet, x, y, this.frameWidth, this.frameHeight, 0, 0, this.frameWidth, this.frameHeight);
-
-                    // Füge das Frame zur Liste hinzu
-                    frames.push(canvas);
-                    // Debug: Ausgabe von jedem extrahierten Frame
-                    console.log(`Frame extrahiert: ${x}, ${y} - Größe: ${this.frameWidth}x${this.frameHeight}`);
-                }
+                frames.push(canvas);
             }
         }
-
-        // Debug: Ausgabe der Anzahl der extrahierten Frames
-        console.log(`Anzahl extrahierter Frames: ${frames.length}`);
-
+        console.log(`Anzahl der Frames extrahiert: ${frames.length}`);
         return frames;
     }
 
@@ -71,6 +84,9 @@ class SpriteSheet {
         if (this.frames.length > 0) {
             return this.frames[index % this.frames.length];
         }
-        return null;
+        console.error('Kein Frame vorhanden.');
+        return null; // Falls keine Frames vorhanden sind, geben wir null zurück
     }
 }
+
+export { SpriteSheet };

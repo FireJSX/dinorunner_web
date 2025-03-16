@@ -6,7 +6,7 @@ class SoundManager {
         this.volume = 0.5;
 
         // Verzeichnis der Sounddateien
-        this.soundDir = "/assets/sound"; // Falls der Pfad anders ist, anpassen
+        this.soundDir = "../sound"; // Falls der Pfad anders ist, anpassen
 
         // Sounddateien
         this.backgroundMusicFile = `${this.soundDir}/somebody_told_you.WAV`;
@@ -100,5 +100,5 @@ class SoundManager {
     }
 }
 
-// Instanz erstellen
 const soundManager = new SoundManager();
+export { soundManager }; // Diese Instanz exportieren, nicht die Klasse

@@ -31,7 +31,7 @@ class UI {
     /**
      * Zeigt den Startbildschirm des Spiels an.
      */
-    startScreen() {
+    showStartScreen() {
         this.ctx.font = this.font;
         this.ctx.fillStyle = 'white';
         this.ctx.textAlign = 'center';
@@ -237,3 +237,5 @@ class Floor {
         ctx.drawImage(this.image, this.rect.x, this.rect.y, this.rect.width, this.rect.height);
     }
 }
+
+export { UI, Floor };

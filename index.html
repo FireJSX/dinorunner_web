@@ -38,40 +38,68 @@
 <button id="startButton">Spiel Starten</button>
 
 <!-- Einbinden der externen JavaScript-Dateien -->
-<script src="js/sfx.js"></script>  <!-- SFX (Sound Manager) -->
-<script src="js/logic.js"></script> <!-- Spiellogik -->
-<script src="js/gui.js"></script>   <!-- GUI (Benutzeroberfläche) -->
-<script src="js/gfx.js"></script>   <!-- GFX (Grafik) -->
+<script type="module" src="js/sfx.js"></script>  <!-- SFX (Sound Manager) -->
+<script type="module" src="js/logic.js"></script> <!-- Spiellogik -->
+<script type="module" src="js/gui.js"></script>   <!-- GUI (Benutzeroberfläche) -->
+<script type="module" src="js/gfx.js"></script>   <!-- GFX (Grafik) -->
 <script type="module" src="js/game.js"></script>  <!-- Hauptspiel-Logik -->
 
-<script>
+<script type="module">
+  // Importiere die gameLoop-Funktion aus game.js
+  import { gameLoop } from './js/game.js';
+
   // Setup für das Spiel
   const startButton = document.getElementById('startButton');
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
 
   // Spielstart durch Button-Klick
   startButton.addEventListener('click', () => {
-    // Soundmanager und Spiel initialisieren
-    soundManager.loadMusic();
-    soundManager.loadJumpSound();
-    soundManager.loadDeathSound();
-
-    // Hintergrundmusik starten
-    soundManager.playBackgroundMusic();
-
-    // Spiel initialisieren und starten
-    initializeGame();
-
     // Start-Button ausblenden
     startButton.style.display = 'none';
+
+    // Lade alle Ressourcen (Bilder, Sounds) und starte das Spiel danach
+    loadResources().then(() => {
+      // Wenn alle Ressourcen geladen sind, starte das Spiel
+      gameLoop();
+    });
   });
 
-  // Funktion zur Initialisierung des Spiels
-  function initializeGame() {
-    // Deine Spiellogik wird hier aus game.js übernommen
-    // Initialisiere das Spiel und starte den Hauptloop
-    gameLoop(); // Der Hauptloop, der das Spiel steuert
+  // Funktion zum Laden aller Ressourcen (Bilder, Sounds)
+  function loadResources() {
+    // Alle Ressourcen, die geladen werden müssen
+    const resources = [
+      '/assets/moon_background.png',
+      '/assets/floor.png',
+      '/assets/dino_idle.png',
+      '/assets/dino_jump.png',
+      '/assets/dino_jump.png',
+      '/sound/somebody_told_you.WAV',
+      '/sound/jump-sound.mp3',
+      '/sound/death-sound.mp3'
+    ];
+
+    // Erstelle Promises für das Laden der Bilder und Sounds
+    const loadPromises = resources.map(src => {
+      return new Promise((resolve, reject) => {
+        let asset;
+
+        if (src.endsWith('.mp3') || src.endsWith('.WAV')) {
+          // Lade Audio-Dateien
+          asset = new Audio(src);
+          asset.oncanplaythrough = resolve;
+          asset.onerror = reject;
+        } else {
+          // Lade Bilder
+          asset = new Image();
+          asset.onload = resolve;
+          asset.onerror = reject;
+        }
+
+        asset.src = src;
+      });
+    });
+
+    // Warte darauf, dass alle Ressourcen geladen sind
+    return Promise.all(loadPromises);
   }
 </script>
 </body>

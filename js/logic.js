@@ -1,6 +1,6 @@
-// logic.js
-
 // Spieler-Klasse
+import { SpriteSheet } from "./gfx.js";
+
 class Player {
     constructor(x, y, size, speed, gravity, ui) {
         this.ui = ui;
@@ -15,10 +15,15 @@ class Player {
         this.state = 'idle'; // Anfangszustand 'idle'
 
         // Animationen
-        this.image = null;
-        this.walkImages = [];
-        this.jumpImages = [];
-        this.idleImages = [];
+        this.walkSpriteSheet = new SpriteSheet('/assets/dino_walk.png', 32, 32);
+        this.jumpSpriteSheet = new SpriteSheet('/assets/dino_jump.png', 32, 32);
+        this.idleSpriteSheet = new SpriteSheet('/assets/dino_idle.png', 32, 32);
+
+        // Arrays zum Speichern der Frames
+        this.walkFrames = [];
+        this.jumpFrames = [];
+        this.idleFrames = [];
+
         this.animationTimer = 0;
         this.animationSpeed = 0.2;
         this.walkFrameIndex = 0;
@@ -26,36 +31,47 @@ class Player {
         this.idleFrameIndex = 0;
         this.facingRight = true;
 
-        // Lade Assets
+        // Lade die Sprite-Sheets
         this.loadAssets();
     }
 
+    reset(startX, startY) {
+        this.x = startX;
+        this.y = startY;
+        this.yChange = 0;
+        this.xChange = 0;
+        this.onGround = false;
+        this.state = 'idle';
+    }
+
+    // Lade die Assets
     loadAssets() {
-        const idlePath = this.ui.getRessourcesPath('assets/dino_idle.png');
-        const walkPath = this.ui.getRessourcesPath('assets/dino_walk.png');
-        const jumpPath = this.ui.getRessourcesPath('assets/dino_jump.png');
-
-        this.loadImage(idlePath, 'idle');
-        this.loadImage(walkPath, 'walk');
-        this.loadImage(jumpPath, 'jump');
-    }
-
-    loadImage(path, state) {
-        const img = new Image();
-        img.onload = () => {
-            if (state === 'idle') this.idleImages.push(img);
-            if (state === 'walk') this.walkImages.push(img);
-            if (state === 'jump') this.jumpImages.push(img);
+        this.walkSpriteSheet.spritesheet.onload = () => {
+            console.log("Walk Sprite-Sheet geladen!");
+            this.walkFrames = this.walkSpriteSheet.extractFrames(); // Hier extrahieren wir die Frames
+            console.log(this.walkFrames);
         };
-        img.src = path;
+
+        this.jumpSpriteSheet.spritesheet.onload = () => {
+            console.log("Jump Sprite-Sheet geladen!");
+            this.jumpFrames = this.jumpSpriteSheet.extractFrames(); // Frames extrahieren
+            console.log(this.jumpFrames);
+        };
+
+        this.idleSpriteSheet.spritesheet.onload = () => {
+            console.log("Idle Sprite-Sheet geladen!");
+            this.idleFrames = this.idleSpriteSheet.extractFrames(); // Frames extrahieren
+            console.log(this.idleFrames);
+        };
     }
 
-    move(keys, floorTop, width) {
+    // move() angepasst, um DeltaTime zu verwenden
+    move(keys, floorTop, width, deltaTime) {
         if (keys['ArrowLeft'] && this.x > 0) {
-            this.xChange = -this.speed;
+            this.xChange = -this.speed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
             this.state = 'walk';
         } else if (keys['ArrowRight'] && this.x <= width) {
-            this.xChange = this.speed;
+            this.xChange = this.speed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
             this.state = 'walk';
         } else {
             this.xChange = 0;
@@ -63,14 +79,14 @@ class Player {
         }
 
         if (keys['Space'] && this.onGround) {
-            this.yChange = 18; // Sprungkraft
+            this.yChange = 18 * deltaTime; // Sprungkraft multipliziert mit DeltaTime
             this.onGround = false;
             this.state = 'jump';
         }
 
         this.x += this.xChange;
         this.y -= this.yChange;
-        this.yChange -= this.gravity;
+        this.yChange -= this.gravity * deltaTime; // Schwerekraft multipliziert mit DeltaTime
 
         if (this.y >= floorTop - this.size) {
             this.y = floorTop - this.size;
@@ -83,51 +99,63 @@ class Player {
         return { x: this.x, y: this.y, width: this.size, height: this.size };
     }
 
-    updateAnimation() {
-        this.animationTimer += this.animationSpeed;
+    // update() angepasst, um DeltaTime zu berücksichtigen
+    update(deltaTime) {
+        this.animationTimer += this.animationSpeed * deltaTime;  // Animation wird ebenfalls framerate-unabhängig
+
         if (this.animationTimer >= 1) {
             this.animationTimer = 0;
 
-            let newImage = null;
-            if (this.state === 'walk' && this.walkImages.length) {
-                newImage = this.walkImages[this.walkFrameIndex];
-                this.walkFrameIndex = (this.walkFrameIndex + 1) % this.walkImages.length;
-            } else if (this.state === 'jump' && this.jumpImages.length) {
-                newImage = this.jumpImages[this.jumpFrameIndex];
-                this.jumpFrameIndex = (this.jumpFrameIndex + 1) % this.jumpImages.length;
-            } else if (this.state === 'idle' && this.idleImages.length) {
-                newImage = this.idleImages[this.idleFrameIndex];
-                this.idleFrameIndex = (this.idleFrameIndex + 1) % this.idleImages.length;
+            let newFrame = null;
+
+            // Wechsle die Frames basierend auf dem Zustand
+            if (this.state === 'walk') {
+                newFrame = this.walkSpriteSheet.getFrame(this.walkFrameIndex); // Hole Frame mit getFrame
+                this.walkFrameIndex = (this.walkFrameIndex + 1) % this.walkSpriteSheet.frames.length; // Update den Index
+            } else if (this.state === 'jump') {
+                newFrame = this.jumpSpriteSheet.getFrame(this.jumpFrameIndex); // Hole Frame mit getFrame
+                this.jumpFrameIndex = (this.jumpFrameIndex + 1) % this.jumpSpriteSheet.frames.length;
+            } else if (this.state === 'idle') {
+                newFrame = this.idleSpriteSheet.getFrame(this.idleFrameIndex); // Hole Frame mit getFrame
+                this.idleFrameIndex = (this.idleFrameIndex + 1) % this.idleSpriteSheet.frames.length;
             }
 
-            if (!newImage) newImage = new Image(); // Default Image
+            if (!newFrame) newFrame = this.idleSpriteSheet.getFrame(0); // Falls kein Bild geladen wurde, zeige das erste Bild von 'idle'
 
-            // Überprüfen, ob der Spieler nach links oder rechts schaut
+            // Debugging: Überprüfe das Bild
+            console.log("Aktuelles Frame:", newFrame);
+
+            // Bestimmen der Blickrichtung
             if (this.xChange > 0) this.facingRight = true;
             else if (this.xChange < 0) this.facingRight = false;
 
-            // Bild flippen, wenn der Spieler nach links schaut
+            // Wenn der Spieler nach links schaut, dann das Bild spiegeln
             if (!this.facingRight) {
-                newImage = this.flipImage(newImage);
+                newFrame = this.flipImage(newFrame);
             }
 
-            this.image = newImage;
+            this.image = newFrame;
         }
     }
 
-    flipImage(image) {
+    flipImage(frame) {
         const canvas = document.createElement('canvas');
-        canvas.width = image.width;
-        canvas.height = image.height;
         const context = canvas.getContext('2d');
+        canvas.width = frame.width;
+        canvas.height = frame.height;
+        context.clearRect(0, 0, canvas.width, canvas.height);
         context.scale(-1, 1);
-        context.drawImage(image, -image.width, 0);
+        context.drawImage(frame, -canvas.width, 0);
         return canvas;
     }
 
-    draw(context) {
-        context.drawImage(this.image, this.x, this.y - this.size);
+    render(context) {
+        if (this.image) {
+            console.log(`Rendering Dino an Position: (${this.x}, ${this.y})`); // Debug-Ausgabe
+            context.drawImage(this.image, this.x, this.y - this.size);
+        }
     }
+
 }
 
 // Hindernis-Manager-Klasse
@@ -143,21 +171,21 @@ class ObstacleManager {
     }
 
     loadObstacleAssets() {
-        const obstaclePath = this.ui.getRessourcesPath('assets/meteor_1.png');
+        const obstaclePath = this.ui.getRessourcesPath('meteor_1.png');
         const img = new Image();
         img.onload = () => this.obstacleImages.push(img);
+        img.onerror = () => console.error(`Fehler beim Laden: ${obstaclePath}`);
         img.src = obstaclePath;
     }
 
-    moveObstacles(active) {
+    // moveObstacles() angepasst, um DeltaTime zu verwenden
+    moveObstacles(deltaTime) {
         let points = 0;
-        if (active) {
-            for (let i = 0; i < this.obstacles.length; i++) {
-                this.obstacles[i] -= this.speed;
-                if (this.obstacles[i] < -this.playerSize) {
-                    this.obstacles[i] = Math.random() * this.width + this.playerSize;
-                    points++;
-                }
+        for (let i = 0; i < this.obstacles.length; i++) {
+            this.obstacles[i] -= this.speed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
+            if (this.obstacles[i] < -this.playerSize) {
+                this.obstacles[i] = Math.random() * this.width + this.playerSize;
+                points++;
             }
         }
         return points;
@@ -171,6 +199,10 @@ class ObstacleManager {
         return false;
     }
 
+    reset() {
+        this.obstacles = [this.width - 150, this.width, this.width + 150];
+    }
+
     rectsCollide(rect1, rect2) {
         return rect1.x < rect2.x + rect2.width &&
             rect1.x + rect1.width > rect2.x &&
@@ -178,24 +210,23 @@ class ObstacleManager {
             rect1.y + rect1.height > rect2.y;
     }
 
-    draw(context) {
-        for (let i = 0; i < this.obstacles.length; i++) {
-            context.drawImage(this.obstacleImages[0], this.obstacles[i], 500 - this.playerSize);
+    render(context) {
+        if (this.obstacleImages.length > 0) {
+            for (let i = 0; i < this.obstacles.length; i++) {
+                context.drawImage(this.obstacleImages[0], this.obstacles[i], 500 - this.playerSize);
+            }
         }
     }
 }
 
 // Highscore-Funktionen
-function loadHighscore(ui) {
-    try {
-        const highscorePath = ui.getRessourcesPath('highscore.json');
-        const data = JSON.parse(localStorage.getItem('highscore')) || { highscore: 0 };
-        return data.highscore;
-    } catch (e) {
-        return 0;
-    }
+function loadHighscore() {
+    const data = JSON.parse(localStorage.getItem('highscore')) || { highscore: 0 };
+    return data.highscore;
 }
 
-function saveHighscore(highscoreValue, ui) {
+function saveHighscore(highscoreValue) {
     localStorage.setItem('highscore', JSON.stringify({ highscore: highscoreValue }));
 }
+
+export { Player, ObstacleManager, loadHighscore, saveHighscore };
