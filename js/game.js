@@ -16,8 +16,8 @@ let score = 0;
 let highscore = 0;
 let active = false;
 let playerSize = 20;
-let gravity = 1;
-let speed = 5;
+let gravity = 0.2;
+let speed = 10;
 let obstacleSpeed = 2;
 let lastSpeedIncrease = -10;
 
@@ -31,54 +31,72 @@ background.src = 'assets/moon_background.png';
 let floor = new Floor(canvas, 'assets/floor.png');
 
 // FPS Setup
-const fps = 60;
+const TARGET_FPS = 60;
+const TARGET_FRAME_TIME = 10 / TARGET_FPS; // 1000 ms / 60 FPS = ca. 16.67 ms pro Frame
 let lastTime = 0; // Zeitstempel für DeltaTime
+let accumulatedTime = 0; // Zeit, die sich über mehrere Frames ansammelt
 
 // Spiel-Schleife
 export function gameLoop(timestamp) {
-    // Berechne den DeltaTime (Zeitdifferenz zwischen den Frames)
-    const deltaTime = (timestamp - lastTime) / 1000; // Delta-Zeit in Sekunden
+    // Berechne die DeltaTime (Zeitdifferenz zwischen den Frames)
+    const deltaTime = timestamp - lastTime;
     lastTime = timestamp; // Speichere den aktuellen Zeitstempel als "letzten" Zeitpunkt
 
-    // Canvas leeren
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    accumulatedTime += deltaTime;
 
-    // Hintergrund rendern
-    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    // Wenn mehr als 16.67 ms vergangen sind (also ein Frame bei 60 FPS), dann rendere und aktualisiere das Spiel
+    while (accumulatedTime >= TARGET_FRAME_TIME) {
+        // Canvas leeren
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    floor.update(ctx);
+        // Hintergrund rendern
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-    // Score und Highscore anzeigen
-    displayScoreAndHighscore();
+        floor.update(ctx);
 
-    if (active) {
-        soundManager.playBackgroundMusic();
-        obstacles.render(ctx);
-    }
-
-    // Wenn das Spiel nicht aktiv ist, zeige das Startmenü
-    if (!active) {
-        ui.showStartScreen(ctx);
-    } else {
-        // Spielerbewegung und Animation aktualisieren
-        const keys = getPressedKeys();
-        player.move(keys, canvas.height - 100, canvas.width - playerSize * 2, deltaTime);  // DeltaTime an die move-Methode übergeben
-        player.update(deltaTime);  // DeltaTime an die update-Methode übergeben
-        player.render(ctx);  // Spieler rendern
-    }
-
-    // Kollisionsprüfung
-    if (active) {
-        score += obstacles.moveObstacles(deltaTime);  // DeltaTime übergeben
-
-        if (obstacles.checkCollision(player.getRect())) {
-            soundManager.playDeathSound();
-            if (score > highscore) {
-                highscore = score;
-                saveHighscore(highscore);
-            }
-            active = false;
+        // Geschwindigkeit alle 10 Punkte erhöhen
+        if (score >= lastSpeedIncrease + 10) {
+            obstacleSpeed += 0.5;  // Erhöhe die Hindernisgeschwindigkeit
+            lastSpeedIncrease = score;  // Merkt sich, wann zuletzt erhöht wurde
         }
+
+        // Score und Highscore anzeigen
+        displayScoreAndHighscore();
+
+        if (active) {
+            soundManager.playBackgroundMusic();
+            obstacles.render(ctx);
+        }
+
+        // Wenn das Spiel nicht aktiv ist, zeige das Startmenü
+        if (!active) {
+            ui.showStartScreen(ctx);
+        } else {
+            // Spielerbewegung und Animation aktualisieren
+            const keys = getPressedKeys();
+            player.move(keys, canvas.height - 100, canvas.width - playerSize * 2, deltaTime / 1000);  // DeltaTime an die move-Methode übergeben (in Sekunden)
+            player.update(deltaTime / 1000);  // DeltaTime an die update-Methode übergeben (in Sekunden)
+            player.render(ctx);  // Spieler rendern
+
+            // Debugging: Ausgabe der Spielerposition
+            console.log(`Player position: x = ${player.x}, y = ${player.y}`);
+        }
+
+        // Kollisionsprüfung
+        if (active) {
+            score += obstacles.moveObstacles(deltaTime / 1000);  // DeltaTime in Sekunden übergeben
+
+            if (obstacles.checkCollision(player.getRect())) {
+                soundManager.playDeathSound();
+                if (score > highscore) {
+                    highscore = score;
+                    saveHighscore(highscore);
+                }
+                active = false;
+            }
+        }
+
+        accumulatedTime -= TARGET_FRAME_TIME; // Ziehe die verbrauchte Zeit ab
     }
 
     // Spiel-Schleife fortsetzen
@@ -90,11 +108,28 @@ let keys = {}; // Objekt für die gedrückten Tasten
 
 // Event-Listener für Tasteneingaben
 window.addEventListener('keydown', (event) => {
-    keys[event.key] = true;
+    if (event.key === 'a' || event.key === 'A') {
+        keys['A'] = true; // A-Taste für nach links
+    }
+    if (event.key === 'd' || event.key === 'D') {
+        keys['D'] = true; // D-Taste für nach rechts
+    }
+    if (event.key === ' ') {
+        keys['Space'] = true; // Leertaste für Sprung
+        console.log("Space key pressed!");  // Debugging: Leertaste gedrückt
+    }
 });
 
 window.addEventListener('keyup', (event) => {
-    keys[event.key] = false;
+    if (event.key === 'a' || event.key === 'A') {
+        keys['A'] = false;
+    }
+    if (event.key === 'd' || event.key === 'D') {
+        keys['D'] = false;
+    }
+    if (event.key === ' ') {
+        keys['Space'] = false;
+    }
 });
 
 // Funktion um die gedrückten Tasten zurückzugeben
@@ -125,11 +160,13 @@ function saveHighscore(score) {
 
 // Funktion zum Spielstart
 function startNewGame() {
-    player.reset();   // Reset der Spielfigur
-    obstacles.reset(); // Reset der Hindernisse
-    score = 0;
+    player.reset(50, canvas.height - playerSize);   // Setze die Spielfigur zurück
+    obstacles.reset();  // Setze die Hindernisse zurück
+    score = 0;  // Setze den Punktestand zurück
+    obstacleSpeed = 2;  // Setze die Hindernisgeschwindigkeit zurück
+    lastSpeedIncrease = -10;  // Setze die letzte Geschwindigkeitserhöhung zurück
     active = true;
-    soundManager.playBackgroundMusic(); // Hintergrundmusik starten
+    soundManager.playBackgroundMusic();  // Hintergrundmusik starten
 }
 
 // Event-Listener für den Startbutton
@@ -146,5 +183,5 @@ soundManager.loadDeathSound();
 
 // Warten bis alle Ressourcen geladen sind, bevor wir den Hauptloop starten
 window.onload = () => {
-    gameLoop(0); // Das Spiel starten, wenn alles bereit ist
+    requestAnimationFrame(gameLoop); // Das Spiel starten, wenn alles bereit ist
 };

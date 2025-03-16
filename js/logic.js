@@ -1,16 +1,18 @@
 // Spieler-Klasse
 import { SpriteSheet } from "./gfx.js";
+import { soundManager } from "./sfx.js";
 
 class Player {
     constructor(x, y, size, speed, gravity, ui) {
         this.ui = ui;
-        this.x = x;
-        this.y = y;
+        this.x = x || 0; // Fallback auf 0, falls x nicht gesetzt ist
+        this.y = y || 0; // Fallback auf 0, falls y nicht gesetzt ist
         this.size = size;
         this.speed = speed;
         this.gravity = gravity;
         this.yChange = 0;
         this.xChange = 0;
+        this.jumpPower = -12;
         this.onGround = false;
         this.state = 'idle'; // Anfangszustand 'idle'
 
@@ -46,54 +48,83 @@ class Player {
 
     // Lade die Assets
     loadAssets() {
+        let loadedCount = 0;
+        const totalAssets = 3; // Anzahl der zu ladenden Sprite-Sheets
+
+        const checkAllAssetsLoaded = () => {
+            loadedCount++;
+            if (loadedCount === totalAssets) {
+                console.log('Alle Assets sind geladen!');
+                // Jetzt können wir mit der Weiterverarbeitung fortfahren
+            }
+        };
+
         this.walkSpriteSheet.spritesheet.onload = () => {
             console.log("Walk Sprite-Sheet geladen!");
-            this.walkFrames = this.walkSpriteSheet.extractFrames(); // Hier extrahieren wir die Frames
-            console.log(this.walkFrames);
+            this.walkFrames = this.walkSpriteSheet.extractFrames();
+            checkAllAssetsLoaded();
         };
 
         this.jumpSpriteSheet.spritesheet.onload = () => {
             console.log("Jump Sprite-Sheet geladen!");
-            this.jumpFrames = this.jumpSpriteSheet.extractFrames(); // Frames extrahieren
-            console.log(this.jumpFrames);
+            this.jumpFrames = this.jumpSpriteSheet.extractFrames();
+            checkAllAssetsLoaded();
         };
 
         this.idleSpriteSheet.spritesheet.onload = () => {
             console.log("Idle Sprite-Sheet geladen!");
-            this.idleFrames = this.idleSpriteSheet.extractFrames(); // Frames extrahieren
-            console.log(this.idleFrames);
+            this.idleFrames = this.idleSpriteSheet.extractFrames();
+            checkAllAssetsLoaded();
         };
     }
 
     // move() angepasst, um DeltaTime zu verwenden
     move(keys, floorTop, width, deltaTime) {
-        if (keys['ArrowLeft'] && this.x > 0) {
-            this.xChange = -this.speed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
+        // Bewegung in x-Richtung
+        this.xChange = 0;
+
+        if (keys['A'] && this.x > 0) {
+            this.xChange = -this.speed * deltaTime; // Bewegung nach links
             this.state = 'walk';
-        } else if (keys['ArrowRight'] && this.x <= width) {
-            this.xChange = this.speed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
+        }
+        if (keys['D'] && this.x < width - this.size) {
+            this.xChange = this.speed * deltaTime; // Bewegung nach rechts
             this.state = 'walk';
-        } else {
-            this.xChange = 0;
-            if (this.onGround) this.state = 'idle';
         }
 
+        // Falls keine Bewegung -> Idle-Animation
+        if (!keys['A'] && !keys['D'] && this.onGround) {
+            this.state = 'idle';
+        }
+
+        // Sprung-Logik mit besserer Physik
         if (keys['Space'] && this.onGround) {
-            this.yChange = 18 * deltaTime; // Sprungkraft multipliziert mit DeltaTime
+            this.yChange = this.jumpPower; // Reduzierte Sprungkraft
             this.onGround = false;
             this.state = 'jump';
+            soundManager.playJumpSound();
         }
 
-        this.x += this.xChange;
-        this.y -= this.yChange;
-        this.yChange -= this.gravity * deltaTime; // Schwerekraft multipliziert mit DeltaTime
+        // Schwerkraft anwenden
+        if (!this.onGround) {
+            this.yChange += this.gravity;
+        }
+        // Position in Y-Richtung anpassen
+        this.y += this.yChange;
 
+        // Boden-Kollision
         if (this.y >= floorTop - this.size) {
             this.y = floorTop - this.size;
             this.yChange = 0;
             this.onGround = true;
         }
+
+        // Spielerposition aktualisieren
+        this.x += this.xChange;
     }
+
+
+
 
     getRect() {
         return { x: this.x, y: this.y, width: this.size, height: this.size };
@@ -101,7 +132,7 @@ class Player {
 
     // update() angepasst, um DeltaTime zu berücksichtigen
     update(deltaTime) {
-        this.animationTimer += this.animationSpeed * deltaTime;  // Animation wird ebenfalls framerate-unabhängig
+        this.animationTimer += this.animationSpeed * deltaTime;
 
         if (this.animationTimer >= 1) {
             this.animationTimer = 0;
@@ -109,18 +140,20 @@ class Player {
             let newFrame = null;
 
             // Wechsle die Frames basierend auf dem Zustand
-            if (this.state === 'walk') {
-                newFrame = this.walkSpriteSheet.getFrame(this.walkFrameIndex); // Hole Frame mit getFrame
-                this.walkFrameIndex = (this.walkFrameIndex + 1) % this.walkSpriteSheet.frames.length; // Update den Index
-            } else if (this.state === 'jump') {
-                newFrame = this.jumpSpriteSheet.getFrame(this.jumpFrameIndex); // Hole Frame mit getFrame
-                this.jumpFrameIndex = (this.jumpFrameIndex + 1) % this.jumpSpriteSheet.frames.length;
-            } else if (this.state === 'idle') {
-                newFrame = this.idleSpriteSheet.getFrame(this.idleFrameIndex); // Hole Frame mit getFrame
-                this.idleFrameIndex = (this.idleFrameIndex + 1) % this.idleSpriteSheet.frames.length;
+            if (this.state === 'walk' && this.walkFrames.length > 0) {
+                newFrame = this.walkFrames[this.walkFrameIndex]; // Hole Frame aus walkFrames
+                this.walkFrameIndex = (this.walkFrameIndex + 1) % this.walkFrames.length; // Update den Index
+            } else if (this.state === 'jump' && this.jumpFrames.length > 0) {
+                newFrame = this.jumpFrames[this.jumpFrameIndex]; // Hole Frame aus jumpFrames
+                this.jumpFrameIndex = (this.jumpFrameIndex + 1) % this.jumpFrames.length;
+            } else if (this.state === 'idle' && this.idleFrames.length > 0) {
+                newFrame = this.idleFrames[this.idleFrameIndex]; // Hole Frame aus idleFrames
+                this.idleFrameIndex = (this.idleFrameIndex + 1) % this.idleFrames.length;
             }
 
-            if (!newFrame) newFrame = this.idleSpriteSheet.getFrame(0); // Falls kein Bild geladen wurde, zeige das erste Bild von 'idle'
+            if (!newFrame) {
+                newFrame = this.idleFrames[0]; // Falls kein Frame vorhanden, zeige das erste Bild von idle
+            }
 
             // Debugging: Überprüfe das Bild
             console.log("Aktuelles Frame:", newFrame);
@@ -152,13 +185,14 @@ class Player {
     render(context) {
         if (this.image) {
             console.log(`Rendering Dino an Position: (${this.x}, ${this.y})`); // Debug-Ausgabe
-            context.drawImage(this.image, this.x, this.y - this.size);
+            let scaleFactor = 2.5
+            let newHeight = this.size * scaleFactor;
+            let newWidth = this.size * scaleFactor;
+            context.drawImage(this.image, this.x, this.y-this.size-10, newWidth, newHeight);
         }
     }
-
 }
 
-// Hindernis-Manager-Klasse
 class ObstacleManager {
     constructor(width, playerSize, speed, ui) {
         this.ui = ui;
@@ -194,7 +228,10 @@ class ObstacleManager {
     checkCollision(playerRect) {
         for (let i = 0; i < this.obstacles.length; i++) {
             const obstacleRect = { x: this.obstacles[i], y: 500 - this.playerSize, width: this.playerSize, height: this.playerSize };
-            if (this.rectsCollide(playerRect, obstacleRect)) return true;
+            if (this.rectsCollide(playerRect, obstacleRect)) {
+                soundManager.playDeathSound();
+                return true;
+            }
         }
         return false;
     }
@@ -213,11 +250,12 @@ class ObstacleManager {
     render(context) {
         if (this.obstacleImages.length > 0) {
             for (let i = 0; i < this.obstacles.length; i++) {
-                context.drawImage(this.obstacleImages[0], this.obstacles[i], 500 - this.playerSize);
+                context.drawImage(this.obstacleImages[0], this.obstacles[i], 500 - this.playerSize-16);
             }
         }
     }
 }
+
 
 // Highscore-Funktionen
 function loadHighscore() {

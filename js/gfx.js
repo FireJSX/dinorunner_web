@@ -15,26 +15,20 @@ class SpriteSheet {
         // Setze den Onload-Handler
         this.spritesheet.onload = () => {
             console.log('Sprite-Sheet geladen!');
-            console.log(`Bildgröße nach dem Laden: ${this.spritesheet.width}x${this.spritesheet.height}`);
-
-            // Falls das Bild korrekt geladen wurde, rufen wir die Extraktionsmethode auf
             if (this.spritesheet.width > 0 && this.spritesheet.height > 0) {
-                this.frames = this.extractFrames();  // Verwende extractFrames, wenn das Bild geladen wurde
+                this.frames = this.extractFrames();  // Extrahiere die Frames, wenn das Bild geladen wurde
             } else {
-                console.error('Das Bild konnte nicht korrekt geladen werden (Breite und Höhe 0).');
+                console.error('Das Bild konnte nicht korrekt geladen werden.');
             }
         };
 
-        // Füge Fehlerbehandlung hinzu
+        // Fehlerbehandlung
         this.spritesheet.onerror = () => {
             console.error('Fehler beim Laden des Sprite-Sheets!');
         };
 
         // Lade das Bild
         this.spritesheet.src = filename;
-
-        // Logge sofort die Größe vor dem Laden (wird immer 0x0 sein, da es noch nicht geladen ist)
-        console.log(`Bildgröße vor dem Laden: ${this.spritesheet.width}x${this.spritesheet.height}`);
     }
 
     /**
@@ -70,22 +64,41 @@ class SpriteSheet {
                 frames.push(canvas);
             }
         }
+
         console.log(`Anzahl der Frames extrahiert: ${frames.length}`);
         return frames;
     }
 
     /**
-     * Gibt einen bestimmten Frame aus dem Sprite-Sheet zurück.
+     * Gibt den Frame aus dem Sprite-Sheet zurück, basierend auf dem Index.
      *
      * @param {number} index - Der Index des gewünschten Frames.
-     * @returns {HTMLCanvasElement|null} Das extrahierte Frame als Canvas-Element oder null, falls keine Frames vorhanden sind.
+     * @returns {HTMLCanvasElement|null} Das extrahierte Frame als Canvas-Element oder null, wenn keine Frames vorhanden sind.
      */
     getFrame(index) {
         if (this.frames.length > 0) {
             return this.frames[index % this.frames.length];
         }
         console.error('Kein Frame vorhanden.');
-        return null; // Falls keine Frames vorhanden sind, geben wir null zurück
+        return null;
+    }
+
+    /**
+     * Liefert die Anzahl der extrahierten Frames.
+     *
+     * @returns {number} Die Anzahl der Frames im Sprite-Sheet.
+     */
+    getFrameCount() {
+        return this.frames.length;
+    }
+
+    /**
+     * Gibt alle Frames zurück (z.B. für Animationen).
+     *
+     * @returns {Array} Eine Liste aller extrahierten Frames.
+     */
+    getAllFrames() {
+        return this.frames;
     }
 }
 

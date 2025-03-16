@@ -144,10 +144,9 @@ class GameController {
      * Behandelt die Eingaben des Spielers.
      *
      * @param {Event} event - Das Eingabeereignis.
-     * @param {number} yChange - Die vertikale Bewegung des Spielers.
      * @returns {number} Die aktualisierte vertikale Bewegung des Spielers.
      */
-    handleInput(event, yChange) {
+    handleInput(event) {
         if (event.type === 'keydown') {
             if (event.key === 'F11') {
                 this.toggleFullscreen();
@@ -155,11 +154,7 @@ class GameController {
             if (event.key === 'F12') {
                 window.close(); // Beendet das Spiel
             }
-            if (event.key === ' ' && yChange === 0) {
-                yChange = 18; // Jumping Action
-            }
         }
-        return yChange;
     }
 
     /**
