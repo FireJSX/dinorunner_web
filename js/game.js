@@ -32,7 +32,7 @@ let floor = new Floor(canvas, 'assets/floor.png');
 
 // FPS Setup
 const TARGET_FPS = 60;
-const TARGET_FRAME_TIME = 10 / TARGET_FPS; // 1000 ms / 60 FPS = ca. 16.67 ms pro Frame
+const TARGET_FRAME_TIME = 40 / TARGET_FPS; // 1000 ms / 60 FPS = ca. 16.67 ms pro Frame
 let lastTime = 0; // Zeitstempel für DeltaTime
 let accumulatedTime = 0; // Zeit, die sich über mehrere Frames ansammelt
 
@@ -118,7 +118,7 @@ window.addEventListener('keydown', (event) => {
     if (event.key === 'd' || event.key === 'D') {
         keys['D'] = true; // D-Taste für nach rechts
     }
-    if (event.key === ' ') {
+    if (event.key === ' ' && !spacePressed) {
         keys['Space'] = true; // Leertaste für Sprung
         spacePressed = true;
         console.log("Space key pressed!");  // Debugging: Leertaste gedrückt
@@ -133,8 +133,12 @@ window.addEventListener('keyup', (event) => {
         keys['D'] = false;
     }
     if (event.key === ' ') {
-        keys['Space'] = false;
-        spacePressed = false;
+        if (!active) {  // Wenn das Spiel beendet ist, neustarten
+            startNewGame();
+        } else {
+            keys['Space'] = false; // Leertaste für Sprung
+            spacePressed = false;
+        }
     }
 });
 
@@ -166,6 +170,9 @@ function saveHighscore(score) {
 
 // Funktion zum Spielstart
 function startNewGame() {
+    if (score>highscore) {
+        highscore=score;
+    }
     player.reset(50, canvas.height - playerSize);   // Setze die Spielfigur zurück
     obstacles.reset();  // Setze die Hindernisse zurück
     score = 0;  // Setze den Punktestand zurück
@@ -173,6 +180,8 @@ function startNewGame() {
     lastSpeedIncrease = -10;  // Setze die letzte Geschwindigkeitserhöhung zurück
     active = true;
     soundManager.playBackgroundMusic();  // Hintergrundmusik starten
+    keys = {};
+    spacePressed = false;
 }
 
 // Event-Listener für den Startbutton

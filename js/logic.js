@@ -12,7 +12,7 @@ class Player {
         this.gravity = gravity;
         this.yChange = 0;
         this.xChange = 0;
-        this.jumpPower = -0.5;
+        this.jumpPower = -0.6;
         this.onGround = false;
         this.state = 'idle'; // Anfangszustand 'idle'
 
