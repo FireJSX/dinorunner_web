@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mein Spiel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      background-color: #ffffff;
+      border: 1px solid #000;
+      display: block;
+      margin: 0 auto;
+    }
+    #startButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #startButton:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+<h1>Willkommen zu meinem Spiel!</h1>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<button id="startButton">Spiel Starten</button>
+
+<!-- Einbinden der externen JavaScript-Dateien -->
+<script src="js/sfx.js"></script>  <!-- SFX (Sound Manager) -->
+<script src="js/logic.js"></script> <!-- Spiellogik -->
+<script src="js/gui.js"></script>   <!-- GUI (Benutzeroberfläche) -->
+<script src="js/gfx.js"></script>   <!-- GFX (Grafik) -->
+<script type="module" src="js/game.js"></script>  <!-- Hauptspiel-Logik -->
+
+<script>
+  // Setup für das Spiel
+  const startButton = document.getElementById('startButton');
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Spielstart durch Button-Klick
+  startButton.addEventListener('click', () => {
+    // Soundmanager und Spiel initialisieren
+    soundManager.loadMusic();
+    soundManager.loadJumpSound();
+    soundManager.loadDeathSound();
+
+    // Hintergrundmusik starten
+    soundManager.playBackgroundMusic();
+
+    // Spiel initialisieren und starten
+    initializeGame();
+
+    // Start-Button ausblenden
+    startButton.style.display = 'none';
+  });
+
+  // Funktion zur Initialisierung des Spiels
+  function initializeGame() {
+    // Deine Spiellogik wird hier aus game.js übernommen
+    // Initialisiere das Spiel und starte den Hauptloop
+    gameLoop(); // Der Hauptloop, der das Spiel steuert
+  }
+</script>
+</body>
+</html>
