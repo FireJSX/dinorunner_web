@@ -17,8 +17,8 @@ let highscore = 0;
 let active = false;
 let playerSize = 20;
 let gravity = 0.1;
-let speed = 15;
-let obstacleSpeed = 6;
+let speed = 18;
+let obstacleSpeed = 8;
 let lastSpeedIncrease = -10;
 
 // Erstelle die Spielfunktionen und Objekte
@@ -36,6 +36,7 @@ const TARGET_FRAME_TIME = 10 / TARGET_FPS; // 1000 ms / 60 FPS = ca. 16.67 ms pr
 let lastTime = 0; // Zeitstempel für DeltaTime
 let accumulatedTime = 0; // Zeit, die sich über mehrere Frames ansammelt
 
+// Spiel-Schleife
 // Spiel-Schleife
 export function gameLoop(timestamp) {
     // Berechne die DeltaTime (Zeitdifferenz zwischen den Frames)
@@ -82,17 +83,18 @@ export function gameLoop(timestamp) {
             console.log(`Player position: x = ${player.x}, y = ${player.y}`);
         }
 
-        // Kollisionsprüfung
+        // Kollisionsprüfung nach Spielerbewegung
         if (active) {
             score += obstacles.moveObstacles(deltaTime / 1000);  // DeltaTime in Sekunden übergeben
 
+            // Kollisionserkennung
             if (obstacles.checkCollision(player.getRect())) {
                 soundManager.playDeathSound();
                 if (score > highscore) {
                     highscore = score;
                     saveHighscore(highscore);
                 }
-                active = false;
+                active = false; // Beende das Spiel, wenn eine Kollision erkannt wird
             }
         }
 
@@ -103,8 +105,10 @@ export function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
+
 // Funktion um Tasteneingaben zu holen
 let keys = {}; // Objekt für die gedrückten Tasten
+let spacePressed = false;
 
 // Event-Listener für Tasteneingaben
 window.addEventListener('keydown', (event) => {
@@ -116,6 +120,7 @@ window.addEventListener('keydown', (event) => {
     }
     if (event.key === ' ') {
         keys['Space'] = true; // Leertaste für Sprung
+        spacePressed = true;
         console.log("Space key pressed!");  // Debugging: Leertaste gedrückt
     }
 });
@@ -129,6 +134,7 @@ window.addEventListener('keyup', (event) => {
     }
     if (event.key === ' ') {
         keys['Space'] = false;
+        spacePressed = false;
     }
 });
 

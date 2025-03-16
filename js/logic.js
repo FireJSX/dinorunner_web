@@ -217,7 +217,7 @@ class ObstacleManager {
         for (let i = 0; i < this.obstacles.length; i++) {
             this.obstacles[i] -= this.speed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
             if (this.obstacles[i] < -this.playerSize) {
-                this.obstacles[i] = Math.random() * this.width + this.playerSize;
+                this.obstacles[i] = this.width + Math.random() * this.width + this.playerSize;
                 points++;
             }
         }
@@ -226,7 +226,7 @@ class ObstacleManager {
 
     checkCollision(playerRect) {
         for (let i = 0; i < this.obstacles.length; i++) {
-            const obstacleRect = { x: this.obstacles[i], y: 500 - this.playerSize, width: this.playerSize, height: this.playerSize };
+            const obstacleRect = { x: this.obstacles[i], y: 500 - this.playerSize, width: this.playerSize+5, height: this.playerSize+5};
             if (this.rectsCollide(playerRect, obstacleRect)) {
                 soundManager.playDeathSound();
                 return true;
