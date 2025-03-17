@@ -154,9 +154,6 @@ class Player {
                 newFrame = this.idleFrames[0]; // Falls kein Frame vorhanden, zeige das erste Bild von idle
             }
 
-            // Debugging: Überprüfe das Bild
-            console.log("Aktuelles Frame:", newFrame);
-
             // Bestimmen der Blickrichtung
             if (this.xChange > 0) this.facingRight = true;
             else if (this.xChange < 0) this.facingRight = false;
@@ -183,7 +180,6 @@ class Player {
 
     render(context) {
         if (this.image) {
-            console.log(`Rendering Dino an Position: (${this.x}, ${this.y})`); // Debug-Ausgabe
             let scaleFactor = 2.5
             let newHeight = this.size * scaleFactor;
             let newWidth = this.size * scaleFactor;
@@ -193,12 +189,12 @@ class Player {
 }
 
 class ObstacleManager {
-    constructor(width, playerSize, speed, ui) {
+    constructor(width, playerSize, obstaclespeed, ui) {
         this.ui = ui;
         this.obstacles = [width - 150, width, width + 150];
         this.width = width;
         this.playerSize = playerSize;
-        this.speed = speed;
+        this.obstaclespeed = obstaclespeed;
         this.obstacleImages = [];
         this.loadObstacleAssets();
     }
@@ -212,10 +208,11 @@ class ObstacleManager {
     }
 
     // moveObstacles() angepasst, um DeltaTime zu verwenden
-    moveObstacles(deltaTime) {
+    moveObstacles(deltaTime, obstacleSpeed) {
+        this.obstaclespeed = obstacleSpeed;
         let points = 0;
         for (let i = 0; i < this.obstacles.length; i++) {
-            this.obstacles[i] -= this.speed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
+            this.obstacles[i] -= this.obstaclespeed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
             if (this.obstacles[i] < -this.playerSize) {
                 this.obstacles[i] = this.width + Math.random() * this.width + this.playerSize;
                 points++;
@@ -255,15 +252,4 @@ class ObstacleManager {
     }
 }
 
-
-// Highscore-Funktionen
-function loadHighscore() {
-    const data = JSON.parse(localStorage.getItem('highscore')) || { highscore: 0 };
-    return data.highscore;
-}
-
-function saveHighscore(highscoreValue) {
-    localStorage.setItem('highscore', JSON.stringify({ highscore: highscoreValue }));
-}
-
-export { Player, ObstacleManager, loadHighscore, saveHighscore };
+export { Player, ObstacleManager};

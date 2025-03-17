@@ -29,10 +29,28 @@ const background = new Image();
 background.src = 'assets/moon_background.png';
 
 let floor = new Floor(canvas, 'assets/floor.png');
+let frameTimes = [];
+let refreshRate = 60; // Standard-Wert als Fallback
+
+function updateRefreshRate() {
+    const now = performance.now();
+    if (window.lastFrameTime) {
+        frameTimes.push(now - window.lastFrameTime);
+        if (frameTimes.length > 30) frameTimes.shift(); // Behalte nur die letzten 30 Frames
+    }
+    window.lastFrameTime = now;
+
+    const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    refreshRate = Math.round(1000 / avgFrameTime);
+}
+
+let targetFrameTime = 2400 / refreshRate;
+
 
 // FPS Setup
+
 const TARGET_FPS = 60;
-const TARGET_FRAME_TIME = 40 / TARGET_FPS; // 1000 ms / 60 FPS = ca. 16.67 ms pro Frame
+const TARGET_FRAME_TIME = targetFrameTime / TARGET_FPS; // 1000 ms / 60 FPS = ca. 16.67 ms pro Frame
 let lastTime = 0; // Zeitstempel für DeltaTime
 let accumulatedTime = 0; // Zeit, die sich über mehrere Frames ansammelt
 
@@ -42,6 +60,8 @@ export function gameLoop(timestamp) {
     // Berechne die DeltaTime (Zeitdifferenz zwischen den Frames)
     const deltaTime = timestamp - lastTime;
     lastTime = timestamp; // Speichere den aktuellen Zeitstempel als "letzten" Zeitpunkt
+
+    updateRefreshRate()
 
     accumulatedTime += deltaTime;
 
@@ -57,8 +77,9 @@ export function gameLoop(timestamp) {
 
         // Geschwindigkeit alle 10 Punkte erhöhen
         if (score >= lastSpeedIncrease + 10) {
-            obstacleSpeed += 0.5;  // Erhöhe die Hindernisgeschwindigkeit
+            obstacleSpeed += 1;  // Erhöhe die Hindernisgeschwindigkeit
             lastSpeedIncrease = score;  // Merkt sich, wann zuletzt erhöht wurde
+            console.log("Speed erhöht! "+ "Aktueller Speed:" + obstacleSpeed)
         }
 
         // Score und Highscore anzeigen
@@ -78,14 +99,11 @@ export function gameLoop(timestamp) {
             player.move(keys, canvas.height - 100, canvas.width - playerSize * 2, deltaTime / 1000);  // DeltaTime an die move-Methode übergeben (in Sekunden)
             player.update(deltaTime / 1000);  // DeltaTime an die update-Methode übergeben (in Sekunden)
             player.render(ctx);  // Spieler rendern
-
-            // Debugging: Ausgabe der Spielerposition
-            console.log(`Player position: x = ${player.x}, y = ${player.y}`);
         }
 
         // Kollisionsprüfung nach Spielerbewegung
         if (active) {
-            score += obstacles.moveObstacles(deltaTime / 1000);  // DeltaTime in Sekunden übergeben
+            score += obstacles.moveObstacles(deltaTime / 1000, obstacleSpeed);  // DeltaTime in Sekunden übergeben
 
             // Kollisionserkennung
             if (obstacles.checkCollision(player.getRect())) {
@@ -176,7 +194,7 @@ function startNewGame() {
     player.reset(50, canvas.height - playerSize);   // Setze die Spielfigur zurück
     obstacles.reset();  // Setze die Hindernisse zurück
     score = 0;  // Setze den Punktestand zurück
-    obstacleSpeed = 2;  // Setze die Hindernisgeschwindigkeit zurück
+    obstacleSpeed = 8;  // Setze die Hindernisgeschwindigkeit zurück
     lastSpeedIncrease = -10;  // Setze die letzte Geschwindigkeitserhöhung zurück
     active = true;
     soundManager.playBackgroundMusic();  // Hintergrundmusik starten
