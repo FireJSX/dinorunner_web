@@ -11,8 +11,6 @@ class UI {
         this.screen = document.getElementById('gameCanvas'); // Das Canvas-Element
         this.ctx = this.screen.getContext('2d'); // Der 2D-Kontext für das Zeichnen
         this.font = '35px Helvetica';
-        this.FPS = 60;
-        this.volume = 0.5;
         this.pauseMenuActive = false;
         this.screen.width = screenWidth;
         this.screen.height = screenHeight;
@@ -25,7 +23,7 @@ class UI {
      * @returns {string} Der absolute Pfad zur Datei.
      */
     getRessourcesPath(filename) {
-        return `../assets/${filename}`;
+        return `/assets/${filename}`;
     }
 
     /**
@@ -52,7 +50,7 @@ class UI {
         this.pauseMenuActive = true;
         let paused = true;
 
-        // Bild für das Exit-Button
+        // Bild für Exit-Button
         const exitButton = new Image();
         exitButton.src = this.getRessourcesPath('exit-button-md.png');
         const exitButtonRect = { x: 15, y: 10, width: exitButton.width / 2, height: exitButton.height / 2 };
@@ -127,80 +125,6 @@ class UI {
         this.manager.drawUI(this.ctx); // Die Benutzeroberflächen-Elemente aktualisieren
     }
 }
-
-class GameController {
-    /**
-     * Verwaltet die Eingaben des Spielers und das Spielfenster.
-     *
-     * @param {HTMLCanvasElement} screen - Das Spielfenster.
-     */
-    constructor(screen) {
-        this.screen = screen;
-        this.screenWidth = screen.width;
-        this.screenHeight = screen.height;
-    }
-
-    /**
-     * Behandelt die Eingaben des Spielers.
-     *
-     * @param {Event} event - Das Eingabeereignis.
-     * @returns {number} Die aktualisierte vertikale Bewegung des Spielers.
-     */
-    handleInput(event) {
-        if (event.type === 'keydown') {
-            if (event.key === 'F11') {
-                this.toggleFullscreen();
-            }
-            if (event.key === 'F12') {
-                window.close(); // Beendet das Spiel
-            }
-        }
-    }
-
-    /**
-     * Schaltet zwischen Vollbild- und Fenstermodus um.
-     */
-    toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            this.screen.requestFullscreen();
-        } else {
-            document.exitFullscreen();
-        }
-    }
-}
-
-class BackgroundImage {
-    /**
-     * Klasse zur Verwaltung und Skalierung des Hintergrundbildes.
-     *
-     * @param {string} filename - Der Dateiname des Hintergrundbildes.
-     * @param {number} screenWidth - Die Breite des Spielfensters.
-     * @param {number} screenHeight - Die Höhe des Spielfensters.
-     */
-    constructor(filename, screenWidth, screenHeight) {
-        this.image = new Image();
-        this.image.src = filename;
-        this.screenWidth = screenWidth;
-        this.screenHeight = screenHeight;
-        this.image.onload = () => {
-            const scaleFactorX = this.screenWidth / this.image.width;
-            const scaleFactorY = this.screenHeight / this.image.height;
-            const scaleFactor = Math.max(scaleFactorX, scaleFactorY);
-            this.newWidth = this.image.width * scaleFactor;
-            this.newHeight = this.image.height * scaleFactor;
-            this.xPosition = (this.newWidth - this.screenWidth) / -2;
-            this.yPosition = (this.newHeight - this.screenHeight) / -2;
-        };
-    }
-
-    /**
-     * Zeichnet den Hintergrund auf den Bildschirm.
-     */
-    blit(ctx) {
-        ctx.drawImage(this.image, this.xPosition, this.yPosition, this.newWidth, this.newHeight);
-    }
-}
-
 class Floor {
     /**
      * Klasse für das Bodenbild im Spiel.

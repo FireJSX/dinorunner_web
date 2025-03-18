@@ -1,9 +1,10 @@
 // Spieler-Klasse
 import { SpriteSheet } from "./gfx.js";
 import { soundManager } from "./sfx.js";
+import { getRefreshRate } from "./refreshRate.js";
 
 class Player {
-    constructor(x, y, size, speed, gravity, ui) {
+    constructor(x, y, size, speed, jumpPower, gravity, ui) {
         this.ui = ui;
         this.x = x || 0; // Fallback auf 0, falls x nicht gesetzt ist
         this.y = y || 0; // Fallback auf 0, falls y nicht gesetzt ist
@@ -12,7 +13,7 @@ class Player {
         this.gravity = gravity;
         this.yChange = 0;
         this.xChange = 0;
-        this.jumpPower = -0.6;
+        this.jumpPower = jumpPower;
         this.onGround = false;
         this.state = 'idle'; // Anfangszustand 'idle'
 
@@ -32,6 +33,8 @@ class Player {
         this.jumpFrameIndex = 0;
         this.idleFrameIndex = 0;
         this.facingRight = true;
+
+        this.fps=12;
 
         // Lade die Sprite-Sheets
         this.loadAssets();
@@ -131,37 +134,45 @@ class Player {
 
     // update() angepasst, um DeltaTime zu berücksichtigen
     update(deltaTime) {
-        this.animationTimer += this.animationSpeed * deltaTime;
+        // Definiere die Frames pro Sekunde je nach Zustand
+        let framesPerSecond = 2; // Standard FPS für Walk und Idle
+        if (this.state === 'jump') {
+            framesPerSecond = 6; // FPS für Jump
+        }
 
-        if (this.animationTimer >= 1) {
-            this.animationTimer = 0;
+        // Berechne die Zeit, die für jedes Frame benötigt wird (in Sekunden)
+        const frameDuration = 1 / framesPerSecond;
+
+        // Zähle den animationTimer mit der Zeit basierend auf deltaTime hoch
+        this.animationTimer += deltaTime;
+
+        // Wenn der Timer den Wert der Frame-Dauer überschreitet, wechsle den Frame
+        if (this.animationTimer >= frameDuration) {
+            this.animationTimer -= frameDuration; // Reset des Timers
 
             let newFrame = null;
 
-            // Wechsle die Frames basierend auf dem Zustand
+            // Bestimme den Frame basierend auf dem Zustand
             if (this.state === 'walk' && this.walkFrames.length > 0) {
-                newFrame = this.walkFrames[this.walkFrameIndex]; // Hole Frame aus walkFrames
-                this.walkFrameIndex = (this.walkFrameIndex + 1) % this.walkFrames.length; // Update den Index
+                newFrame = this.walkFrames[this.walkFrameIndex]; // Holen des Frames aus walkFrames
+                this.walkFrameIndex = (this.walkFrameIndex + 1) % this.walkFrames.length; // Update des Indexes
             } else if (this.state === 'jump' && this.jumpFrames.length > 0) {
-                newFrame = this.jumpFrames[this.jumpFrameIndex]; // Hole Frame aus jumpFrames
+                newFrame = this.jumpFrames[this.jumpFrameIndex]; // Holen des Frames aus jumpFrames
                 this.jumpFrameIndex = (this.jumpFrameIndex + 1) % this.jumpFrames.length;
             } else if (this.state === 'idle' && this.idleFrames.length > 0) {
-                newFrame = this.idleFrames[this.idleFrameIndex]; // Hole Frame aus idleFrames
+                newFrame = this.idleFrames[this.idleFrameIndex]; // Holen des Frames aus idleFrames
                 this.idleFrameIndex = (this.idleFrameIndex + 1) % this.idleFrames.length;
             }
 
             if (!newFrame) {
-                newFrame = this.idleFrames[0]; // Falls kein Frame vorhanden, zeige das erste Bild von idle
+                newFrame = this.idleFrames[0]; // Falls kein Frame vorhanden, das erste Bild von idle verwenden
             }
-
-            // Debugging: Überprüfe das Bild
-            console.log("Aktuelles Frame:", newFrame);
 
             // Bestimmen der Blickrichtung
             if (this.xChange > 0) this.facingRight = true;
             else if (this.xChange < 0) this.facingRight = false;
 
-            // Wenn der Spieler nach links schaut, dann das Bild spiegeln
+            // Wenn der Dino nach links schaut, dann das Bild spiegeln
             if (!this.facingRight) {
                 newFrame = this.flipImage(newFrame);
             }
@@ -183,7 +194,6 @@ class Player {
 
     render(context) {
         if (this.image) {
-            console.log(`Rendering Dino an Position: (${this.x}, ${this.y})`); // Debug-Ausgabe
             let scaleFactor = 2.5
             let newHeight = this.size * scaleFactor;
             let newWidth = this.size * scaleFactor;
@@ -193,12 +203,12 @@ class Player {
 }
 
 class ObstacleManager {
-    constructor(width, playerSize, speed, ui) {
+    constructor(width, playerSize, obstaclespeed, ui) {
         this.ui = ui;
         this.obstacles = [width - 150, width, width + 150];
         this.width = width;
         this.playerSize = playerSize;
-        this.speed = speed;
+        this.obstaclespeed = obstaclespeed;
         this.obstacleImages = [];
         this.loadObstacleAssets();
     }
@@ -212,10 +222,11 @@ class ObstacleManager {
     }
 
     // moveObstacles() angepasst, um DeltaTime zu verwenden
+    // moveObstacles() angepasst, um DeltaTime zu verwenden und intern den `obstaclespeed` zu verwenden
     moveObstacles(deltaTime) {
         let points = 0;
         for (let i = 0; i < this.obstacles.length; i++) {
-            this.obstacles[i] -= this.speed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
+            this.obstacles[i] -= this.obstaclespeed * deltaTime;  // Geschwindigkeit multipliziert mit DeltaTime
             if (this.obstacles[i] < -this.playerSize) {
                 this.obstacles[i] = this.width + Math.random() * this.width + this.playerSize;
                 points++;
@@ -255,15 +266,4 @@ class ObstacleManager {
     }
 }
 
-
-// Highscore-Funktionen
-function loadHighscore() {
-    const data = JSON.parse(localStorage.getItem('highscore')) || { highscore: 0 };
-    return data.highscore;
-}
-
-function saveHighscore(highscoreValue) {
-    localStorage.setItem('highscore', JSON.stringify({ highscore: highscoreValue }));
-}
-
-export { Player, ObstacleManager, loadHighscore, saveHighscore };
+export { Player, ObstacleManager};

@@ -6,12 +6,12 @@ class SoundManager {
         this.volume = 0.5;
 
         // Verzeichnis der Sounddateien
-        this.soundDir = "../sound"; // Falls der Pfad anders ist, anpassen
+        this.soundDir = "/sound"; // Falls der Pfad anders ist, anpassen
 
         // Sounddateien
-        this.backgroundMusicFile = `${this.soundDir}/somebody_told_you.WAV`;
-        this.jumpSoundFile = `${this.soundDir}/jump-sound.mp3`;
-        this.deathSoundFile = `${this.soundDir}/death-sound.mp3`;
+        this.backgroundMusicFile = `${this.soundDir}/somebody_told_you.ogg`;
+        this.jumpSoundFile = `${this.soundDir}/jump-sound.ogg`;
+        this.deathSoundFile = `${this.soundDir}/death-sound.ogg`;
 
         this.jumpSoundVolume = 0.2;
 
